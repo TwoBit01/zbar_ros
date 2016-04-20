@@ -32,6 +32,7 @@
 #include "zbar_ros/barcode_reader_nodelet.h"
 #include "pluginlib/class_list_macros.h"
 #include "std_msgs/String.h"
+#include "opencv/highgui.h"
 
 namespace zbar_ros
 {
@@ -77,10 +78,13 @@ namespace zbar_ros
   void BarcodeReaderNodelet::imageCb(const sensor_msgs::ImageConstPtr &image)
   {
     cv_bridge::CvImageConstPtr cv_image;
-    cv_image = cv_bridge::toCvShare(image, "mono16");
+    cv_image = cv_bridge::toCvShare(image, "bgr8");
 
-    zbar::Image zbar_image(cv_image->image.cols, cv_image->image.rows, "Y800", cv_image->image.data,
-        cv_image->image.cols * cv_image->image.rows);
+    // convert into grayscale image
+    cv::Mat gray_image;
+    cv::cvtColor(cv_image->image, gray_image, CV_BGR2GRAY); 
+
+    zbar::Image zbar_image(gray_image.cols, gray_image.rows, "Y800", gray_image.data, gray_image.cols * gray_image.rows);
     scanner_.scan(zbar_image);
 
     // iterate over all barcode readings from image
